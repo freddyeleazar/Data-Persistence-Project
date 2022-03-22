@@ -12,13 +12,13 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
+    public Text BestScoreText;
+    public int bestScore;
     
     private bool m_Started = false;
-    private int m_Points;
     
     private bool m_GameOver = false;
 
-    
     // Start is called before the first frame update
     void Start()
     {
@@ -35,6 +35,26 @@ public class MainManager : MonoBehaviour
                 brick.PointValue = pointCountArray[i];
                 brick.onDestroyed.AddListener(AddPoint);
             }
+        }
+
+        RefreshBestScoreText();
+        InitializeScoreText();
+    }
+
+    private void RefreshBestScoreText()
+    {
+        if(StartMenu.Instance != null)
+        {
+            BestScoreText.text = "Best Score: " + StartMenu.Instance.bestPlayerName + ": " + StartMenu.Instance.bestScore;
+        }
+    }
+
+    private void InitializeScoreText()
+    {
+        StartMenu.Instance.score = 0;
+        if(StartMenu.Instance != null)
+        {
+            ScoreText.text = "Score: " + StartMenu.Instance.score;
         }
     }
 
@@ -55,6 +75,13 @@ public class MainManager : MonoBehaviour
         }
         else if (m_GameOver)
         {
+            if(StartMenu.Instance.score > StartMenu.Instance.bestScore)
+            {
+                StartMenu.Instance.bestPlayerName = StartMenu.Instance.playerName;
+                StartMenu.Instance.bestScore = StartMenu.Instance.score;
+                RefreshBestScoreText();
+                StartMenu.Instance.SaveBestScoreData();
+            }
             if (Input.GetKeyDown(KeyCode.Space))
             {
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
@@ -64,8 +91,8 @@ public class MainManager : MonoBehaviour
 
     void AddPoint(int point)
     {
-        m_Points += point;
-        ScoreText.text = $"Score : {m_Points}";
+        StartMenu.Instance.score += point;
+        ScoreText.text = $"Score : {StartMenu.Instance.score}";
     }
 
     public void GameOver()
