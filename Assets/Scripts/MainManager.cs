@@ -1,8 +1,9 @@
-using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using static StartMenu;
 
 public class MainManager : MonoBehaviour
 {
@@ -12,7 +13,8 @@ public class MainManager : MonoBehaviour
 
     public Text ScoreText;
     public GameObject GameOverText;
-    public Text BestScoreText;
+    public Text lbl_bestScore;
+    public Text lbl_bestPlayer;
     public int bestScore;
     
     private bool m_Started = false;
@@ -43,18 +45,22 @@ public class MainManager : MonoBehaviour
 
     private void RefreshBestScoreText()
     {
-        if(StartMenu.Instance != null)
+        if(Instance != null)
         {
-            BestScoreText.text = "Best Score: " + StartMenu.Instance.bestPlayerName + ": " + StartMenu.Instance.bestScore;
+            List<Score> bestScores = Instance.persistentData.bestScores;
+
+            Score bestScore = bestScores.Find(x => x.score == bestScores.Max(x => x.score));
+            lbl_bestScore.text = bestScore.score.ToString();
+            lbl_bestPlayer.text = bestScore.playerName;
         }
     }
 
     private void InitializeScoreText()
     {
-        StartMenu.Instance.score = 0;
-        if(StartMenu.Instance != null)
+        Instance.currentScore.score = 0;
+        if (Instance != null)
         {
-            ScoreText.text = "Score: " + StartMenu.Instance.score;
+            ScoreText.text = "Score: " + Instance.currentScore.score.ToString();
         }
     }
 
@@ -75,8 +81,9 @@ public class MainManager : MonoBehaviour
         }
         else if (m_GameOver)
         {
-            if(StartMenu.Instance.score > StartMenu.Instance.bestScore)
+            if(StartMenu.Instance.currentScore.score > StartMenu.Instance.persistentData.bestScores.Min(x => x.score))
             {
+                Instance.persistentData.
                 StartMenu.Instance.bestPlayerName = StartMenu.Instance.playerName;
                 StartMenu.Instance.bestScore = StartMenu.Instance.score;
                 RefreshBestScoreText();

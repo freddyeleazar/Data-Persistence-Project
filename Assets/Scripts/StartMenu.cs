@@ -1,8 +1,6 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 using TMPro;
 using System.IO;
 #if UNITY_EDITOR
@@ -11,17 +9,6 @@ using UnityEditor;
 
 public class StartMenu : MonoBehaviour
 {
-    [SerializeField]
-    private TMP_Text playerNameText;
-    [SerializeField]
-    private TMP_Text bestScoreText;
-
-    public string playerName;
-    public int score;
-
-    public string bestPlayerName;
-    public int bestScore;
-    
     public static StartMenu Instance;
 
     private void Awake()
@@ -35,47 +22,69 @@ public class StartMenu : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    [SerializeField]
+    private TMP_Text playerNameText;
+    [SerializeField]
+    private TMP_Text bestScoresText;
+
+    public Score currentScore;
+    public PersistentData persistentData;
+
     private void Start()
     {
-        LoadBestScoreData();
-        bestScoreText.text = "Best Score: " + Instance.bestPlayerName + ": " + Instance.bestScore;
+        Instance.persistentData.LoadBestScores();
+        foreach (var score in Instance.persistentData.bestScores)
+        {
+            Instance.bestScoresText.text += score.ToString() + "\n";
+        }
     }
 
     public void LoadMainScene()
     {
-        playerName = playerNameText.text;
-        score = 0;
+        Instance.currentScore = new Score(playerNameText.text, 0);
         SceneManager.LoadScene(1);
     }
 
     [System.Serializable]
-    class BestScoreData
+    public class PersistentData
     {
-        public string newBestPlayerName;
-        public int newBestScore;
-    }
-
-    public void SaveBestScoreData()
-    {
-        BestScoreData bestScoreData = new BestScoreData();
-        bestScoreData.newBestPlayerName = Instance.bestPlayerName;
-        bestScoreData.newBestScore = Instance.bestScore;
-
-        string jsonBestScoreData = JsonUtility.ToJson(bestScoreData);
-
-        File.WriteAllText(Application.persistentDataPath + "/savefile.json", jsonBestScoreData);
-    }
-
-    public void LoadBestScoreData()
-    {
-        string path = Application.persistentDataPath + "/savefile.json";
-        if (File.Exists(path))
+        public List<Score> bestScores;
+        
+        public void LoadBestScores()
         {
-            string jsonBestScoreData = File.ReadAllText(path);
-            BestScoreData bestScoreData = JsonUtility.FromJson<BestScoreData>(jsonBestScoreData);
+            if (bestScores == null)
+            {
+                bestScores = new List<Score>();
+            }
+            if (File.Exists(Application.persistentDataPath + "/bestScores.json"))
+            {
+                string json = File.ReadAllText(Application.persistentDataPath + "/bestScores.json");
+                bestScores = JsonUtility.FromJson<PersistentData>(json).bestScores;
+            }
+        }
 
-            Instance.bestPlayerName = bestScoreData.newBestPlayerName;
-            Instance.bestScore = bestScoreData.newBestScore;
+        public void SaveBestScores()
+        {
+            string json = JsonUtility.ToJson(this);
+            File.WriteAllText(Application.persistentDataPath + "/bestScores.json", json);
+        }
+    }
+    
+    public class Score
+    {
+        public string playerName;
+        public int score;
+
+        public Score(string playerName, int score)
+        {
+            this.playerName = playerName;
+            this.score = score;
+        }
+
+        public void SaveScore()
+        {
+            Instance.persistentData.bestScores.Add(this);
+            Instance.persistentData.SaveBestScores();
         }
     }
 
